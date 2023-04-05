@@ -57,9 +57,12 @@ async function run(){
         }else
         if (feed.entity[i].tripUpdate) {
 
-            if (feed.entity[i].tripUpdate.stopTimeUpdate[0].arrival) { //problème avec les accès
-                console.log(i)
-                console.log(feed.entity[1].tripUpdate.stopTimeUpdate[1].arrival)
+            if (feed.entity[i].tripUpdate.stopTimeUpdate) { //problème avec les accès
+
+                if(feed.entity[i].tripUpdate.stopTimeUpdate.length > 2){ //générer une fct qui cherche l'index du prochain arret recherché dans les stopTimes
+                    console.log(feed.entity[i].tripUpdate.stopTimeUpdate[2].arrival) //le pb viens du fait que stopTimeUpdate n'as pas nécéssairement une listes avec une longueur
+                //zenbus:StopPoint:SP:507070002:LOC arret gare multimodale a rechercher (nouvelle variable a créer pour pls écrans)
+                }
                 let value = feed.entity[i].tripUpdate.stopTimeUpdate[0].arrival.time.toString()//prochain passage a l'arret 0 chercher le bon arret
 
                 const longValue = Long.fromString(value); // Create a Long object from a string
