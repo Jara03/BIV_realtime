@@ -1,32 +1,23 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+  <div class="main-container">
+
+    <h3 class="stopName">Gare Multimodale</h3>
+
+    <div class="table-container">
+    <table class="my-table">
+      <tbody>
+      <tr v-for="(item,index) in hours" :key="index">
+
+        <td><label class="lineTag">{{item.ln}}</label></td>
+        <td><label>direction</label></td>
+        <td>{{item.rm}}</td>
+
+      </tr>
+      </tbody>
+    </table>
+
+    </div>
+
   </div>
 </template>
 
@@ -39,9 +30,19 @@ export default {
   mounted() {
 
     setInterval(() => {
-    //faire l'appel api et intégrer les données
+      //faire l'appel api et intégrer les données
+      axios.get("http://localhost:3000/api/bivrt")
+          .then((response) => {
 
-    }, 15000);
+            let data = response.data;
+            this.hours = (data);
+            //Vue.set(this.hours,'hours',data);
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+
+    }, 5000);
 
   },
   name: 'HelloWorld',
@@ -50,7 +51,7 @@ export default {
   },
   data(){
     return {
-      myData: []
+      hours: [{ln:"L1", rm:"14"},{ln:"L2", rm:"1"},{ln:"L3", rm:"5"}]
     }
   },
   methods:{
@@ -60,18 +61,68 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
+.lineTag{
+  font-weight:bold;
+  border-radius: 7px;
+  border: 2px #2c3e50 solid;
+  padding-inline: 10px;
+  padding-bottom: 3px;
+  padding-top: 3px;
+  background-color: #2c3e50;
+  color:white;
+  justify-content: start;
+  width: auto;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
-ul {
-  list-style-type: none;
-  padding: 0;
+
+.stopName{
+  padding: 15px;
+  margin-bottom: 50px;
 }
-li {
-  display: inline-block;
-  margin: 0 10px;
+.main-container{
 }
-a {
-  color: #42b983;
+
+.table-container {
+  font-size: large;
+  display: flex;
+  justify-content: center;
 }
+
+.my-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.my-table th, .my-table td {
+  padding: 25px;
+  text-align: center;
+  background-color: lightgrey;
+}
+
+.my-table td:first-child {
+  width: 33%;
+}
+
+.my-table td:nth-child(2) {
+  width: 33%;
+}
+
+.my-table td:nth-child(3) {
+  width: 33%;
+}
+.my-table th {
+  background-color: #f2f2f2;
+
+}
+.my-table td {
+}
+.my-table tr {
+  border-bottom: 3px solid #fff;
+}
+
+
+
+
+
 </style>

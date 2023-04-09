@@ -9,10 +9,10 @@ const Long = require("long");
 const axios = require("axios") ;
 const express = require("express");
 const path = require("path");
-
+const cors = require("cors");
 
 const app = express();
-
+app.use(cors());
 app.get('/api/bivrt', async (req, res) => {
     const protoPath =  './resources/poll.proto';
     try {
