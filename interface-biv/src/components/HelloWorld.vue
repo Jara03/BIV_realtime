@@ -1,7 +1,21 @@
 <template>
   <div class="main-container">
 
-    <h3 class="stopName">Gare Multimodale</h3>
+    <div style="display: flex;flex-direction: row; justify-content:space-evenly;align-content: center;">
+
+      <div style="display: flex; justify-content: start; align-items: center; margin-left:50px">
+        <img src="../../resources/LOGO-REZO-2048x1065.png" alt="" style="width: 100px; height: 50px"/>
+      </div>
+
+        <div style="display: flex; justify-content: center; align-items: center; flex-grow: 1; ">
+          <h2 style="color: black">Gare Multimodale</h2>
+        </div>
+
+      <div style="display: flex; justify-content: center; align-items: center;background-color:#8f6adf;">
+        <p style="color:white;padding: 50px; font-size:20px">{{ currentTime }}</p>
+      </div>
+
+    </div>
 
     <div class="table-container">
     <table class="my-table">
@@ -26,6 +40,12 @@
 import axios from 'axios';
 
 export default {
+  created() {
+    setInterval(() => {
+      let date = new Date();
+      this.currentTime = date.toLocaleTimeString();
+    }, 1000)
+  },
 
   mounted() {
 
@@ -51,7 +71,8 @@ export default {
   },
   data(){
     return {
-      hours: [{ln:"L1", rm:"14"},{ln:"L2", rm:"1"},{ln:"L3", rm:"5"}]
+      hours: [{ln:"L1", rm:"14"},{ln:"L2", rm:"1"},{ln:"L3", rm:"5"}],
+      currentTime: ''
     }
   },
   methods:{
@@ -76,11 +97,8 @@ export default {
   text-overflow: ellipsis;
 }
 
-.stopName{
-  padding: 15px;
-  margin-bottom: 50px;
-}
 .main-container{
+
 }
 
 .table-container {
