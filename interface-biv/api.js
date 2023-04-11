@@ -65,8 +65,9 @@ const stopId = 'zenbus:StopPoint:SP:507070002:LOC' //arret gare multimodale a re
  function formatGTFSName(zenbusName){
      return new Promise((resolve, reject) => {
          const linedata = fs.createReadStream("./resources/verdun-rezo/routes.txt", {encoding: "utf8"});
-
-         let res = '';
+        let res = {name:'', color:''};
+         let resName = '';
+         let rescolor = '';
 
          const rl = readline.createInterface({
              input: linedata,
@@ -76,7 +77,9 @@ const stopId = 'zenbus:StopPoint:SP:507070002:LOC' //arret gare multimodale a re
          rl.on('line', (line) => {
              const values = line.split(',');
              if (zenbusName.toString() === values[0]) {
-                 res = values[2];
+                 resName = values[2];
+                 rescolor = values[7];
+                 res = {name:resName,color:('#'+rescolor)};
              }
          });
 
@@ -162,12 +165,13 @@ async function run(){
                     const date = new Date(timestamp);
 
 
-                    let LineName = await formatGTFSName(feed.entity[i].tripUpdate.trip.routeId);
+                    let LineInfo = await formatGTFSName(feed.entity[i].tripUpdate.trip.routeId);//TODO envoyer la couleur de ligne
                     let RemainMinutes = formatRemainingMinutes(date);
                    // console.log(LineName + ' dans :' + formatRemainingMinutes(date) + " vers : " + findStopName());
                     RTHOURS.push({
-                        ln: LineName,
-                        rm: RemainMinutes
+                        ln: LineInfo.name,
+                        rm: RemainMinutes,
+                        color:LineInfo.color
                     })
                 }
 

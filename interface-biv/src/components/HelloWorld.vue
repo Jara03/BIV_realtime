@@ -22,7 +22,7 @@
       <tbody>
       <tr v-for="(item,index) in hours" :key="index">
 
-        <td><label class="lineTag">{{item.ln}}</label></td>
+        <td><label class="lineTag" :style="{backgroundColor:item.color}">{{item.ln}}</label></td>
         <td><label>direction</label></td>
         <td>{{item.rm}} <img class="realtime-icon" src="../../resources/giphy.gif" alt="realtime GIF"/></td>
 
@@ -71,7 +71,7 @@ export default {
   },
   data(){
     return {
-      hours: [{ln:"L1", rm:"14"},{ln:"L2", rm:"1"},{ln:"L3", rm:"5"}],
+      hours: [{ln:"L1", rm:"14",color:"black"},{ln:"L2", rm:"1",color:"black"},{ln:"L3", rm:"5",color:"black"}],
       currentTime: ''
     }
   },
@@ -85,11 +85,10 @@ export default {
 .lineTag{
   font-weight:bold;
   border-radius: 7px;
-  border: 2px #2c3e50 solid;
+  border: 2px inherit solid;
   padding-inline: 10px;
   padding-bottom: 3px;
   padding-top: 3px;
-  background-color: #2c3e50;
   color:white;
   justify-content: start;
   width: auto;
