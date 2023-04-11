@@ -24,7 +24,7 @@
 
         <td><label class="lineTag">{{item.ln}}</label></td>
         <td><label>direction</label></td>
-        <td>{{item.rm}}</td>
+        <td>{{item.rm}} <img class="realtime-icon" src="../../resources/giphy.gif" alt="realtime GIF"/></td>
 
       </tr>
       </tbody>
@@ -99,6 +99,11 @@ export default {
 
 .main-container{
 
+}
+.realtime-icon{
+  width: 25px ;
+  height: 20px;
+  transform: rotate(45deg);
 }
 
 .table-container {
