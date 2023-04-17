@@ -19,12 +19,19 @@
 
     <div class="table-container">
     <table class="my-table">
+      <thead>
+      <tr>
+        <th>Ligne</th>
+        <th>Direction</th>
+        <th>Temps de passage</th>
+      </tr>
+      </thead>
       <tbody>
       <tr v-for="(item,index) in hours" :key="index">
 
         <td><label class="lineTag" :style="{backgroundColor:item.color}">{{item.ln}}</label></td>
-        <td><label>direction</label></td>
-        <td>{{item.rm}} <img class="realtime-icon" src="../../resources/giphy.gif" alt="realtime GIF"/></td>
+        <td><label>{{ item.direction }}</label></td>
+        <td>{{item.rm}}<img class="realtime-icon" src="../../resources/giphy.gif" alt="realtime GIF"/></td>
 
       </tr>
       </tbody>
@@ -33,6 +40,17 @@
     </div>
 
   </div>
+
+  <div>
+    <!-- Your page content here -->
+    <div class="footer">
+      <!-- Your footer content here -->
+      <img src="../../resources/logo-grand-verdun.png" style="height: 10%; width: 10%" alt="">
+      <img src="../../resources/Transdev_logo_2018.png" style="height: 10%; width: 10%" alt="">
+      <p> version beta (1.0)</p>
+    </div>
+  </div>
+
 </template>
 
 <script>
@@ -48,7 +66,8 @@ export default {
   },
 
   mounted() {
-
+  //TODO si plus de 4 passages réaliser l'affichage en mode diapo
+    //TODO trier les passage par ordre de passage
     setInterval(() => {
       //faire l'appel api et intégrer les données
       axios.get("http://localhost:3000/api/bivrt")
@@ -71,7 +90,9 @@ export default {
   },
   data(){
     return {
-      hours: [{ln:"L1", rm:"14",color:"black"},{ln:"L2", rm:"1",color:"black"},{ln:"L3", rm:"5",color:"black"}],
+      hours: [{ln:"L1", rm:"14",direction:"...",color:"black"},
+        {ln:"L2", rm:"1",direction:"...",color:"black"},
+        {ln:"L3", rm:"5",direction:"...",color:"black"}],
       currentTime: ''
     }
   },
@@ -82,8 +103,23 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+
+.footer {
+  display: flex;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: white;
+  text-align: center;
+  justify-content: space-evenly;
+  align-items: center;
+  padding: 10px;
+}
+
 .lineTag{
   font-weight:bold;
+  font-size: 30px;
   border-radius: 7px;
   border: 2px inherit solid;
   padding-inline: 10px;

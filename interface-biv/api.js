@@ -10,6 +10,7 @@ const axios = require("axios") ;
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
+const csv = require("csv-parser");
 
 const app = express();
 app.use(cors());
@@ -88,7 +89,43 @@ const stopId = 'zenbus:StopPoint:SP:507070002:LOC' //arret gare multimodale a re
          });
      });
 }
+async function getLastStopOfTrip(tripId) {
+    return new Promise((resolve, reject) => {
+        // Load the stop times data for this trip
+        const stopTimes = [];
+        fs.createReadStream('./resources/verdun-rezo/stop_times.txt')
+            .pipe(csv())
+            .on('data', row => {
+                if (row.trip_id === tripId) {
+                    stopTimes.push(row);
+                }
+            })
+            .on('end', async () => {
+                // Sort the stop times by their sequence number
+                stopTimes.sort((a, b) => a.stop_sequence - b.stop_sequence);
 
+                // Get the last stop ID
+                const lastStopId = stopTimes[stopTimes.length - 1].stop_id;
+
+                // Find the stop with this ID in the stops.txt file
+                const stopName = await getStopNameById(lastStopId);
+
+                resolve(stopName);
+            });
+
+        async function getStopNameById(stopId) {
+            return new Promise(resolve => {
+                fs.createReadStream('./resources/verdun-rezo/stops.txt')
+                    .pipe(csv())
+                    .on('data', row => {
+                        if (row.stop_id === stopId) {
+                            resolve(row.stop_name);
+                        }
+                    });
+            });
+        }
+    });
+}
 
 function findStopName(){
 
@@ -109,7 +146,7 @@ function findStopName(){
     const now = new Date();
      // Unix timestamp
      const diffInSeconds = (nextDate.getTime() - now.getTime()) / 1000;
-    return Math.trunc(diffInSeconds / 60);
+    return diffInSeconds < 60 ? 'PI' :  Math.trunc(diffInSeconds / 60) + " min"; //TODO ajouter passage imminent
 }
 
 function searchStopPoint(stopTimeUpdates) {
@@ -132,15 +169,12 @@ function searchStopPoint(stopTimeUpdates) {
 
 async function run(){
     let RTHOURS = [];
-   // console.log(findStopName())
 
     const data = fs.readFileSync("./resources/poll.proto") //attention le fichier doit etre en UTF-8
     //console.log(ex);
     const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(Buffer.from(data));
 
-    //const feed1 = feed1.toJSON();
 
-    //console.log(feed.entity.length);
 
 
     for(let i = 0; i < feed.entity.length;i++){
@@ -150,9 +184,7 @@ async function run(){
             if (feed.entity[i].tripUpdate.stopTimeUpdate) {
 
                 let stopTimeItem = searchStopPoint(feed.entity[i].tripUpdate.stopTimeUpdate);
-
-                //TODO mettre les directions
-                //TODO fetch le lien de l'api toutes les ...secondes (utiliser axios)
+                //TODO mettre une limite de temps restant minimale
 
                 if(stopTimeItem != null){
 
@@ -163,6 +195,9 @@ async function run(){
                     const longValue = Long.fromString(value); // Create a Long object from a string
                     const timestamp = longValue.toNumber() * 1000; // Convert the Long object to a timestamp in milliseconds
                     const date = new Date(timestamp);
+                    const dir = await getLastStopOfTrip(feed.entity[i].tripUpdate.trip.tripId);
+
+                    //console.log(dir);
 
 
                     let LineInfo = await formatGTFSName(feed.entity[i].tripUpdate.trip.routeId);//TODO envoyer la couleur de ligne
@@ -171,6 +206,7 @@ async function run(){
                     RTHOURS.push({
                         ln: LineInfo.name,
                         rm: RemainMinutes,
+                        direction: dir,
                         color:LineInfo.color
                     })
                 }
