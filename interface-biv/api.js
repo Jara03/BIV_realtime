@@ -1,7 +1,3 @@
-
-
-
-
 const GtfsRealtimeBindings = require('gtfs-realtime-bindings');
 const fs = require("fs")
 const readline = require("readline");
@@ -12,9 +8,12 @@ const path = require("path");
 const cors = require("cors");
 const csv = require("csv-parser");
 
+const gtfshours = require("./gtfshours.js");
+
 const app = express();
 app.use(cors());
-app.get('/api/bivrt', async (req, res) => {
+
+app.get('/api/verdun-rezo/gare', async (req, res) => {
     const protoPath =  './resources/poll.proto';
     try {
          axios.get('https://zenbus.net/gtfs/rt/poll.proto?dataset=verdun-rezo',{
@@ -28,14 +27,19 @@ app.get('/api/bivrt', async (req, res) => {
                  });
              }
 
+
              const writer = fs.createWriteStream(path.resolve(protoPath));
              response.data.pipe(writer);
              writer.on('finish', async () => {
                  console.log('File downloaded successfully!');
 
                  const hours = await run();
-                 console.log(hours);
-                 res.json(hours);
+                 const theo_hours = await gtfshours.processData();
+                 //console.log(hours);
+                 //console.log(theo_hours);
+                // console.log(filterHours(hours,theo_hours));
+                 const filteredHours = filterHours(hours,theo_hours)
+                 res.json(filteredHours);
              });
 
 
@@ -63,11 +67,48 @@ const stopId = 'zenbus:StopPoint:SP:507070002:LOC' //arret gare multimodale a re
 
 //fonction de chargement des données avec express
 
+function filterHours(data1, data2){
+    const filteredData = [];
+
+    // Create a map to track trip IDs and their corresponding objects
+    const tripMap = new Map();
+
+    // Process data from the first table
+    for (const item of data1) {
+        const { tr } = item;
+
+        // Add or update the item in the map
+        tripMap.set(tr, item);
+    }
+
+    // Process data from the second table
+    for (const item of data2) {
+        const { tr } = item;
+
+        // If trip ID already exists in the map, skip
+        if (tripMap.has(tr)) {
+            continue;
+        }
+
+        // Add the item from the second table to the map
+        tripMap.set(tr, item);
+    }
+
+    // Convert the map values to an array of filtered data
+    for (const item of tripMap.values()) {
+        filteredData.push(item);
+    }
+
+    return filteredData;
+}
+
  function formatGTFSName(zenbusName){
      return new Promise((resolve, reject) => {
          const linedata = fs.createReadStream("./resources/verdun-rezo/routes.txt", {encoding: "utf8"});
-        let res = {name:'', color:''};
-         let resName = '';
+        let res = '';
+        let resName = '';
+         let arrival = '';
+         let trip_id = '';
          let rescolor = '';
 
          const rl = readline.createInterface({
@@ -78,7 +119,9 @@ const stopId = 'zenbus:StopPoint:SP:507070002:LOC' //arret gare multimodale a re
          rl.on('line', (line) => {
              const values = line.split(',');
              if (zenbusName.toString() === values[0]) {
-                 resName = values[2];
+                 resName = values[4];
+                 arrival = values[2];
+                 trip_id = values[0];
                  rescolor = values[7];
                  res = {name:resName,color:('#'+rescolor)};
              }
@@ -96,6 +139,7 @@ async function getLastStopOfTrip(tripId) {
         fs.createReadStream('./resources/verdun-rezo/stop_times.txt')
             .pipe(csv())
             .on('data', row => {
+                //console.log(tripId)
                 if (row.trip_id === tripId) {
                     stopTimes.push(row);
                 }
@@ -146,9 +190,11 @@ function findStopName(){
     const now = new Date();
      // Unix timestamp
      const diffInSeconds = (nextDate.getTime() - now.getTime()) / 1000;
-    return diffInSeconds < 60 ? 'PI' :  Math.trunc(diffInSeconds / 60) + " min"; //TODO ajouter passage imminent
+    //return diffInSeconds < 60 ? 'PI' :  Math.trunc(diffInSeconds / 60) + " min";
+     return Math.trunc(diffInSeconds / 60);
 }
 
+let gtfsPath = './resources/verdun-rezo/';
 function searchStopPoint(stopTimeUpdates) {
     //boucler dans le tableau et rechercher l'element de passage au stop
     //retourner le stopTimeUpdate correspondant
@@ -167,15 +213,13 @@ function searchStopPoint(stopTimeUpdates) {
 
 }
 
+
 async function run(){
     let RTHOURS = [];
 
     const data = fs.readFileSync("./resources/poll.proto") //attention le fichier doit etre en UTF-8
-    //console.log(ex);
+
     const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(Buffer.from(data));
-
-
-
 
     for(let i = 0; i < feed.entity.length;i++){
 
@@ -184,7 +228,6 @@ async function run(){
             if (feed.entity[i].tripUpdate.stopTimeUpdate) {
 
                 let stopTimeItem = searchStopPoint(feed.entity[i].tripUpdate.stopTimeUpdate);
-                //TODO mettre une limite de temps restant minimale
 
                 if(stopTimeItem != null){
 
@@ -197,24 +240,30 @@ async function run(){
                     const date = new Date(timestamp);
                     const dir = await getLastStopOfTrip(feed.entity[i].tripUpdate.trip.tripId);
 
-                    //console.log(dir);
-
 
                     let LineInfo = await formatGTFSName(feed.entity[i].tripUpdate.trip.routeId);//TODO envoyer la couleur de ligne
                     let RemainMinutes = formatRemainingMinutes(date);
+                    let tripID = feed.entity[i].tripUpdate.trip.tripId;
                    // console.log(LineName + ' dans :' + formatRemainingMinutes(date) + " vers : " + findStopName());
-                    RTHOURS.push({
-                        ln: LineInfo.name,
-                        rm: RemainMinutes,
-                        direction: dir,
-                        color:LineInfo.color
-                    })
+                    if(RemainMinutes < 46){
+                        RTHOURS.push({
+                            tr: tripID,
+                            ln: LineInfo.name,
+                            rm: RemainMinutes,
+                            direction:dir,
+                            color:LineInfo.color,
+                            rt: true
+                        })
+                    }
+
                 }
 
 
             }
         }
     }
+    //tri du tableau avant envoi
+    RTHOURS.sort((a, b) => a.rm - b.rm);
 
     return RTHOURS;
 }

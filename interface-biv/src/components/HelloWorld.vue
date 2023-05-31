@@ -17,27 +17,30 @@
 
     </div>
 
-    <div class="table-container">
-    <table class="my-table">
-      <thead>
-      <tr>
-        <th>Ligne</th>
-        <th>Direction</th>
-        <th>Temps de passage</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="(item,index) in hours" :key="index">
 
-        <td><label class="lineTag" :style="{backgroundColor:item.color}">{{item.ln}}</label></td>
-        <td><label>{{ item.direction }}</label></td>
-        <td>{{item.rm}}<img class="realtime-icon" src="../../resources/giphy.gif" alt="realtime GIF"/></td>
+    <!--diapo part-->
 
-      </tr>
-      </tbody>
-    </table>
-
+    <div class="slideshow-container table-container">
+      <div v-for="(page, index) in pages" :key="index" class="slide" :class="{ active: currentPageIndex === index }">
+        <table class="my-table">
+          <thead>
+          <tr>
+            <th>Lignes</th>
+            <th>Directions</th>
+            <th>Temps de passage</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(hours, index) in page" :key="index">
+            <td><label class="lineTag" :style="{backgroundColor:hours.color}">{{hours.ln}}</label></td>
+            <td><label>{{ hours.direction }}</label></td>
+            <td>{{ formatRemainingTime(hours.rm) }}<img class="realtime-icon" src="../../resources/giphy.gif" alt="realtime GIF"/></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+    <!--diapo part-->
 
   </div>
 
@@ -66,11 +69,9 @@ export default {
   },
 
   mounted() {
-  //TODO si plus de 4 passages réaliser l'affichage en mode diapo
-    //TODO trier les passage par ordre de passage
     setInterval(() => {
       //faire l'appel api et intégrer les données
-      axios.get("http://localhost:3000/api/bivrt")
+      axios.get("http://localhost:3000/api/verdun-rezo/gare")
           .then((response) => {
 
             let data = response.data;
@@ -81,7 +82,10 @@ export default {
             console.error(error);
           });
 
-    }, 5000);
+    }, 10000);
+    setInterval(() => {
+      this.currentPageIndex = (this.currentPageIndex + 1) % this.pages.length;
+    }, 7000);
 
   },
   name: 'HelloWorld',
@@ -90,19 +94,58 @@ export default {
   },
   data(){
     return {
+      itemsPerPage: 4,
+      currentPageIndex: 0,
+
       hours: [{ln:"L1", rm:"14",direction:"...",color:"black"},
         {ln:"L2", rm:"1",direction:"...",color:"black"},
         {ln:"L3", rm:"5",direction:"...",color:"black"}],
       currentTime: ''
     }
   },
+  computed: {
+    pages() {
+      const pageCount = Math.ceil(this.hours.length / this.itemsPerPage);
+      const pages = [];
+      for (let i = 0; i < pageCount; i++) {
+        const start = i * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        pages.push(this.hours.slice(start, end));
+      }
+      return pages;
+    }
+  },
   methods:{
+
+    formatRemainingTime(time){
+      return time < 1 ? 'Passage Imminent' :  time + " min ";
+    }
   }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+
+.slideshow-container {
+  position: relative;
+  height: 500px;
+  overflow: hidden;
+}
+.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition:opacity 0.25s ease-in-out;
+  z-index: -1;
+}
+.slide.active {
+  opacity: 1;
+  z-index: 1;
+}
 
 .footer {
   display: flex;
@@ -164,6 +207,7 @@ export default {
 
 .my-table td:nth-child(2) {
   width: 33%;
+  font-size: 20px;
 }
 
 .my-table td:nth-child(3) {
